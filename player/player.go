@@ -8,7 +8,6 @@ import (
 
 	"github.com/dancnb/sonicradio/config"
 	"github.com/dancnb/sonicradio/player/ffplay"
-	"github.com/dancnb/sonicradio/player/internal"
 	"github.com/dancnb/sonicradio/player/model"
 	"github.com/dancnb/sonicradio/player/mpd"
 	"github.com/dancnb/sonicradio/player/mplayer"
@@ -17,11 +16,11 @@ import (
 )
 
 type Player struct {
-	delegate  backendPlayer
+	delegate  BackendPlayer
 	available map[config.PlayerType]struct{}
 }
 
-type backendPlayer interface {
+type BackendPlayer interface {
 	Play(url string) error
 	Pause(value bool) error
 	Stop() error
@@ -43,7 +42,7 @@ type backendPlayer interface {
 	Close() error
 }
 
-func NewPlayer(ctx context.Context, cfg *config.Value) (*Player, error) {
+func NewPlayer(ctx context.Context, cfg *config.Value, internalPlayer BackendPlayer) (*Player, error) {
 	p := new(Player)
 	err := p.checkAvailablePlayers(cfg)
 	if err != nil {
@@ -51,39 +50,42 @@ func NewPlayer(ctx context.Context, cfg *config.Value) (*Player, error) {
 	}
 
 	vol := cfg.GetVolume()
-	switch cfg.Player {
-	case config.Internal:
-		p.delegate = internal.New(ctx, clampVolume(vol), cfg.Internal)
-	case config.Mpv:
-		mpvPlayer, err := mpv.NewMPVSocket(ctx)
-		if err != nil {
-			return nil, err
+
+	if internalPlayer != nil {
+		p.delegate = internalPlayer
+	} else {
+		switch cfg.Player {
+		case config.Mpv:
+			mpvPlayer, err := mpv.NewMPVSocket(ctx)
+			if err != nil {
+				return nil, err
+			}
+			p.delegate = mpvPlayer
+		case config.FFPlay:
+			ffplayPlayer, err := ffplay.NewFFPlay(ctx)
+			if err != nil {
+				return nil, err
+			}
+			p.delegate = ffplayPlayer
+		case config.Vlc:
+			vlcPlayer, err := vlc.NewVlc(ctx)
+			if err != nil {
+				return nil, err
+			}
+			p.delegate = vlcPlayer
+		case config.MPlayer:
+			mplayer, err := mplayer.New(ctx, vol)
+			if err != nil {
+				return nil, err
+			}
+			p.delegate = mplayer
+		case config.MPD:
+			mpdp, err := mpd.New(ctx, cfg.MpdHost, cfg.MpdPort, cfg.GetMpdPassword())
+			if err != nil {
+				return nil, err
+			}
+			p.delegate = mpdp
 		}
-		p.delegate = mpvPlayer
-	case config.FFPlay:
-		ffplayPlayer, err := ffplay.NewFFPlay(ctx)
-		if err != nil {
-			return nil, err
-		}
-		p.delegate = ffplayPlayer
-	case config.Vlc:
-		vlcPlayer, err := vlc.NewVlc(ctx)
-		if err != nil {
-			return nil, err
-		}
-		p.delegate = vlcPlayer
-	case config.MPlayer:
-		mplayer, err := mplayer.New(ctx, vol)
-		if err != nil {
-			return nil, err
-		}
-		p.delegate = mplayer
-	case config.MPD:
-		mpdp, err := mpd.New(ctx, cfg.MpdHost, cfg.MpdPort, cfg.GetMpdPassword())
-		if err != nil {
-			return nil, err
-		}
-		p.delegate = mpdp
 	}
 
 	_, err = p.delegate.SetVolume(clampVolume(vol))
@@ -94,13 +96,13 @@ func NewPlayer(ctx context.Context, cfg *config.Value) (*Player, error) {
 	return p, nil
 }
 
-var errNoPlayerAvailable = errors.New("No available player found. Must have at least one of the following in PATH: mpv, ffplay, vlc.")
+var errNoPlayerAvailable = errors.New("No available player found. Must have at least one of the following in PATH: mpv, ffplay, vlc, mplayer, mpd.")
 
 func (p *Player) checkAvailablePlayers(cfg *config.Value) error {
 	p.available = make(map[config.PlayerType]struct{}, len(config.Players))
 	var firstAvailable *config.PlayerType
 	for _, v := range config.Players {
-		if ok := checkAvailablePlayer(v); !ok {
+		if ok := checkAvailablePlayer(cfg.UseInternal, v); !ok {
 			continue
 		}
 		if firstAvailable == nil {
@@ -128,8 +130,8 @@ var baseCmds = map[config.PlayerType]func() string{
 	config.MPD:     mpd.GetBaseCmd,
 }
 
-func checkAvailablePlayer(p config.PlayerType) bool {
-	if p == config.Internal {
+func checkAvailablePlayer(useInternal *bool, p config.PlayerType) bool {
+	if p == config.Internal && useInternal != nil && *useInternal {
 		return true
 	}
 	baseCmdFn, ok := baseCmds[p]

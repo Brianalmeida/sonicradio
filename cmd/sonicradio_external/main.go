@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	version = "0.8.12"
+	version = "0.8.13-alpha5"
 
 	cpuProfile  = flag.String("cpuprofile", "", "-cpuprofile=<filename>")
 	memProfile  = flag.String("memprofile", "", "-memprofile=<filename>")
@@ -101,6 +101,8 @@ func run() {
 	if cfg == nil {
 		panic("could not get config")
 	}
+	useInternal := false
+	cfg.UseInternal = &useInternal
 
 	slog.Info("loaded", "config", cfg.String())
 
@@ -108,7 +110,7 @@ func run() {
 	if err != nil {
 		panic(err)
 	}
-	p, err := player.NewPlayer(ctx, cfg)
+	p, err := player.NewPlayer(ctx, cfg, nil)
 	if err != nil {
 		panic(err)
 	}
