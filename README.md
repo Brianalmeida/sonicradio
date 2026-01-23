@@ -8,12 +8,19 @@ A TUI radio player making use of [Radio Browser API](https://www.radio-browser.i
 
 - ### Install using go:
 
+Internal player version (requires CGO):
   ```
-    go install github.com/dancnb/sonicradio@latest
+  go install github.com/dancnb/sonicradio/cmd/sonicradio@latest  
   ```
+
+External players only (no CGO):
+  ```
+  go install github.com/dancnb/sonicradio/cmd/sonicradio_external@latest  
+  ```
+
 - ### Clone this repository and build from source.
 
-  Some additional prerequisites are needed based on the platform (ex: CGO required for non-Windows), since this project uses <https://github.com/gopxl/beep>, respectively <https://github.com/ebitengine/oto> for the internal player implementation.
+  Depending on version (for the internal player implementation), some additional prerequisites are needed based on the platform (ex: CGO required for non-Windows), since this project uses <https://github.com/gopxl/beep>, respectively <https://github.com/ebitengine/oto>.
 
 - ### Optional third-party backend players:
 
@@ -31,7 +38,7 @@ A TUI radio player making use of [Radio Browser API](https://www.radio-browser.i
 After the installation, the command to run the application:
 
 ```
-    sonicradio
+    sonicradio #sonicradio_external
 ```
 
 Available options:
