@@ -8,12 +8,12 @@ A TUI radio player making use of [Radio Browser API](https://www.radio-browser.i
 
 - ### Install using go:
 
-Internal player version (requires CGO):
+  Internal player version (requires CGO):
   ```
   go install github.com/dancnb/sonicradio/cmd/sonicradio@latest  
   ```
 
-External players only (no CGO):
+  External players only (no CGO):
   ```
   go install github.com/dancnb/sonicradio/cmd/sonicradio_external@latest  
   ```
