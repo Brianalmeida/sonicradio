@@ -32,6 +32,7 @@ type nowPlayingModel struct {
 	logo             string
 	stationUUID      string
 	lastFetchedTitle string
+	artworkCancel    context.CancelFunc
 }
 
 func newNowPlayingModel(m *Model, style *Style) *nowPlayingModel {
@@ -59,7 +60,13 @@ func (n *nowPlayingModel) Update(msg tea.Msg) (*nowPlayingModel, tea.Cmd) {
 	case metadataMsg:
 		if msg.songTitle != "" && msg.songTitle != n.lastFetchedTitle {
 			n.lastFetchedTitle = msg.songTitle
-			cmds = append(cmds, n.fetchArtworkCmd(msg.songTitle))
+			// Cancel in-flight artwork requests
+			if n.artworkCancel != nil {
+				n.artworkCancel()
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			n.artworkCancel = cancel
+			cmds = append(cmds, n.fetchArtworkCmd(ctx, msg.songTitle))
 		}
 
 	case logoFetchedMsg:
@@ -78,12 +85,19 @@ func (n *nowPlayingModel) Update(msg tea.Msg) (*nowPlayingModel, tea.Cmd) {
 			name := n.m.delegate.currPlaying.Name
 			n.stationUUID = n.m.delegate.currPlaying.Stationuuid
 			n.lastFetchedTitle = "" // Reset on new station
+			// Cancel station logo if we switch quickly
+			if n.artworkCancel != nil {
+				n.artworkCancel()
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			n.artworkCancel = cancel
+
 			n.m.delegate.playingMtx.RUnlock()
 			if url != "" {
-				cmds = append(cmds, n.fetchLogoCmd(url))
+				cmds = append(cmds, n.fetchLogoCmd(ctx, url))
 			} else {
 				n.lastFetchedTitle = name
-				cmds = append(cmds, n.fetchArtworkCmd(name))
+				cmds = append(cmds, n.fetchArtworkCmd(ctx, name))
 			}
 		} else {
 			n.m.delegate.playingMtx.RUnlock()
@@ -96,7 +110,13 @@ func (n *nowPlayingModel) Update(msg tea.Msg) (*nowPlayingModel, tea.Cmd) {
 			// Station changed but we might have missed playRespMsg or it's a resume
 			url := n.m.delegate.currPlaying.Favicon
 			n.stationUUID = n.m.delegate.currPlaying.Stationuuid
-			cmds = append(cmds, n.fetchLogoCmd(url))
+			
+			if n.artworkCancel != nil {
+				n.artworkCancel()
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			n.artworkCancel = cancel
+			cmds = append(cmds, n.fetchLogoCmd(ctx, url))
 		}
 		n.m.delegate.playingMtx.RUnlock()
 
@@ -114,20 +134,20 @@ func (n *nowPlayingModel) Update(msg tea.Msg) (*nowPlayingModel, tea.Cmd) {
 	return n, tea.Batch(cmds...)
 }
 
-func (n *nowPlayingModel) fetchArtworkCmd(term string) tea.Cmd {
+func (n *nowPlayingModel) fetchArtworkCmd(ctx context.Context, term string) tea.Cmd {
 	return func() tea.Msg {
-		artworkURL, err := browser.FetchArtworkURL(context.Background(), term)
+		artworkURL, err := browser.FetchArtworkURL(ctx, term)
 		if err != nil || artworkURL == "" {
 			return nil
 		}
-		logo := FetchAndConvertLogo(context.Background(), artworkURL)
+		logo := FetchAndConvertLogo(ctx, artworkURL)
 		return logoFetchedMsg{url: term, logo: logo}
 	}
 }
 
-func (n *nowPlayingModel) fetchLogoCmd(url string) tea.Cmd {
+func (n *nowPlayingModel) fetchLogoCmd(ctx context.Context, url string) tea.Cmd {
 	return func() tea.Msg {
-		logo := FetchAndConvertLogo(context.Background(), url)
+		logo := FetchAndConvertLogo(ctx, url)
 		return logoFetchedMsg{url: url, logo: logo}
 	}
 }
