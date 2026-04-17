@@ -59,6 +59,7 @@ var Themes = []Theme{
 		Dark:  ColorProfile{primaryColor: "#e5e5e5ff", secondaryColor: "#bdbdbdff", invertedPrimaryColor: "#2e2e2eff", invertedSecondaryColor: "#818181ff"},
 		Light: ColorProfile{primaryColor: "#2e2e2eff", secondaryColor: "#818181ff", invertedPrimaryColor: "#e5e5e5ff", invertedSecondaryColor: "#bdbdbdff"},
 	},
+	// Added more themes to choose from on Apr 17th, 2026
 	{
 		Name:  "Catppuccin Macchiato",
 		Dark:  ColorProfile{primaryColor: "#8aadf4", secondaryColor: "#c6a0f6", invertedPrimaryColor: "#24273a", invertedSecondaryColor: "#494d64"},
