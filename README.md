@@ -7,8 +7,7 @@ A TUI radio player making use of [Radio Browser API](https://www.radio-browser.i
 ---
 ## Song/Album Art
 **Note:** This feature was created with the help of Google Gemini. Currently this feature is experimental and considered a WIP 🚧
-
-<img width="3422" height="1328" alt="Screenshot From 2026-04-17 16-25-22" src="https://github.com/user-attachments/assets/f1079eb6-016c-4042-835e-66c14aeb31e9" />
+<img width="1722" height="660" alt="Screenshot From 2026-04-17 17-40-37" src="https://github.com/user-attachments/assets/e98ff51f-5323-428c-a370-d5646ea4c054" />
 
 
 ## Installation
