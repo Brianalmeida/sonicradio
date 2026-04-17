@@ -27,7 +27,7 @@ A TUI radio player making use of [Radio Browser API](https://www.radio-browser.i
 
 - ### Build locally:
     ```
-    git clone <repo-url>
+    git clone https://github.com/Brianalmeida/sonicradio.git
     ```
     ```
     cd sonicradio
