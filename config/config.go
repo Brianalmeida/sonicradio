@@ -71,7 +71,7 @@ const (
 	DefMpdPort = 6600
 
 	DefInternalBufferSeconds = 0
-)
+	)
 
 type Value struct {
 	Version     string      `json:"-"`
@@ -242,6 +242,8 @@ func Load(version string) (cfg *Value, err error) {
 		Volume:         &defVolume,
 		HistorySaveMax: &defHistorySaveMax,
 		HistoryChan:    make(chan []HistoryEntry),
+		Player:         FFPlay,
+		Internal:       InternalPlayer{BufferSeconds: DefInternalBufferSeconds},
 	}
 
 	cfgDirPath, err := getOrCreateConfigDir()
@@ -267,6 +269,10 @@ func Load(version string) (cfg *Value, err error) {
 
 	if cfg.Volume == nil {
 		cfg.Volume = &defVolume
+	}
+
+	if cfg.Internal.BufferSeconds == 0 {
+		cfg.Internal.BufferSeconds = DefInternalBufferSeconds
 	}
 
 	// history
@@ -405,7 +411,7 @@ func (v *Value) saveFavorites(filename string) (err error) {
 }
 
 func (v *Value) saveCfgFile(cfgDirPath string) (entries []HistoryEntry, err error) {
-	cfgFile, err := os.Create(filepath.Join(cfgDirPath, cfgFilename))
+	cfgFile, err := os.OpenFile(filepath.Join(cfgDirPath, cfgFilename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return
 	}
@@ -467,7 +473,7 @@ func getOrCreateConfigDir() (string, error) {
 	}
 
 	logger.Info(fmt.Sprintf("creating config dir at path %s", fp))
-	if err = os.MkdirAll(fp, os.ModePerm); err != nil {
+	if err = os.MkdirAll(fp, 0700); err != nil {
 		return "", fmt.Errorf("creating config dir at path %s: %v", fp, err)
 	}
 

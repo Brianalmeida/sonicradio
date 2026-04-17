@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mattn/go-runewidth"
 	"github.com/dancnb/sonicradio/browser"
 	"github.com/dancnb/sonicradio/config"
 	"github.com/dancnb/sonicradio/model"
@@ -326,9 +327,7 @@ func (d *stationDelegate) renderDefaultView(
 	res.WriteString(prefixRender)
 	maxWidth := max(listWidth-lipgloss.Width(prefixRender)-HeaderPadDist-widthOffset, 0)
 
-	for lipgloss.Width(itStyle.Render(name)) > maxWidth-widthOffset && len(name) > 0 {
-		name = name[:len(name)-1]
-	}
+	name = runewidth.Truncate(name, maxWidth-widthOffset, "…")
 	nameRender := itStyle.Render(name)
 	res.WriteString(nameRender)
 	hFill := max(listWidth-lipgloss.Width(prefixRender)-lipgloss.Width(nameRender)-HeaderPadDist-widthOffset, 0)
@@ -336,9 +335,7 @@ func (d *stationDelegate) renderDefaultView(
 	res.WriteString("\n")
 
 	res.WriteString(prefixStyle.Render(strings.Repeat(" ", utf8.RuneCountInString(prefix))))
-	for lipgloss.Width(descStyle.Render(desc)) > maxWidth-widthOffset && len(desc) > 0 {
-		desc = desc[:len(desc)-1]
-	}
+	desc = runewidth.Truncate(desc, maxWidth-widthOffset, "…")
 	descRender := descStyle.Render(desc)
 	res.WriteString(descRender)
 	hFill = max(listWidth-lipgloss.Width(prefixRender)-lipgloss.Width(descRender)-HeaderPadDist-widthOffset, 0)
@@ -364,17 +361,13 @@ func (d *stationDelegate) renderCompactView(
 	width1 := 45
 	width2 := maxWidth - width1
 
-	for lipgloss.Width(itStyle.Render(name)) > width1 && len(name) > 0 {
-		name = name[:len(name)-1]
-	}
+	name = runewidth.Truncate(name, width1, "…")
 	nameRender := itStyle.Render(name)
 	res.WriteString(nameRender)
 	hFill := max(width1-lipgloss.Width(nameRender), 0)
 	res.WriteString(itStyle.Render(strings.Repeat(" ", hFill)))
 
-	for lipgloss.Width(descStyle.Render(desc)) > width2 && len(desc) > 0 {
-		desc = desc[:len(desc)-1]
-	}
+	desc = runewidth.Truncate(desc, width2, "…")
 	descRender := descStyle.Render(desc)
 	res.WriteString(descRender)
 	hFill = max(width2-lipgloss.Width(descRender), 0)
@@ -398,9 +391,7 @@ func (d *stationDelegate) renderMinimalView(
 	res.WriteString(prefixRender)
 	maxWidth := max(listWidth-lipgloss.Width(prefixRender)-HeaderPadDist, 0)
 
-	for lipgloss.Width(itStyle.Render(name)) > maxWidth-widthOffset && len(name) > 0 {
-		name = name[:len(name)-1]
-	}
+	name = runewidth.Truncate(name, maxWidth-widthOffset, "…")
 	nameRender := itStyle.Render(name)
 	res.WriteString(nameRender)
 	hFill := max(listWidth-lipgloss.Width(prefixRender)-lipgloss.Width(nameRender)-HeaderPadDist-widthOffset, 0)

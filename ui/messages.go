@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dancnb/sonicradio/config"
 	smodel "github.com/dancnb/sonicradio/model"
 	"github.com/dancnb/sonicradio/player/model"
 )
@@ -81,6 +82,17 @@ type (
 		viewMsg
 		statusMsg
 		stations []smodel.Station
+	}
+
+	logoFetchedMsg struct {
+		url  string
+		logo string
+	}
+
+	clearStatusMsg struct{}
+
+	historyUpdateMsg struct {
+		entries []config.HistoryEntry
 	}
 )
 

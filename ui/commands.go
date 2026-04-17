@@ -121,7 +121,7 @@ func (m *Model) playStationCmd(selStation model.Station) tea.Cmd {
 	m.songTitle = ""
 	m.playbackTime = 0
 	m.updateStatus(fmt.Sprintf("Connecting to %s...", selStation.Name))
-	cmds := []tea.Cmd{m.initSpinner(), m.delegate.playCmd(selStation)}
+	cmds := []tea.Cmd{m.initSpinner(), m.delegate.playCmd(selStation), m.startIcySniffer(selStation)}
 	return tea.Batch(cmds...)
 }
 

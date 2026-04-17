@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/dancnb/sonicradio/player/model"
 	playerutils "github.com/dancnb/sonicradio/player/utils"
@@ -82,7 +83,7 @@ func (f *FFPlay) play(url string) error {
 		return cmd.Err
 	}
 	log.Info("cmd", "args", cmd.Args)
-	cmd.Stderr = &bytes.Buffer{}
+	cmd.Stderr = &safeBuffer{}
 	err := cmd.Start()
 	if err != nil {
 		log.Error("ffplay cmd start", "error", err)
@@ -145,7 +146,7 @@ func (f *FFPlay) Metadata() *model.Metadata {
 	}
 	log := slog.With("method", "FFPlay.Metadata")
 
-	output := f.playing.Stderr.(*bytes.Buffer).String()
+	output := f.playing.Stderr.(*safeBuffer).String()
 
 	for _, err := range errs {
 		errIx := strings.Index(output, err)
@@ -176,10 +177,27 @@ func (f *FFPlay) Metadata() *model.Metadata {
 	return &model.Metadata{Title: title, PlaybackTimeSec: f.pt.GetPlayTime()}
 }
 
-func (f *FFPlay) Seek(amtSec int) *model.Metadata {
+func (ff *FFPlay) Seek(amtSec int) *model.Metadata {
 	return nil
 }
 
-func (f *FFPlay) Close() error {
+func (ff *FFPlay) Close() error {
 	return nil
+}
+
+type safeBuffer struct {
+	b bytes.Buffer
+	m sync.RWMutex
+}
+
+func (s *safeBuffer) Write(p []byte) (n int, err error) {
+	s.m.Lock()
+	defer s.m.Unlock()
+	return s.b.Write(p)
+}
+
+func (s *safeBuffer) String() string {
+	s.m.RLock()
+	defer s.m.RUnlock()
+	return s.b.String()
 }

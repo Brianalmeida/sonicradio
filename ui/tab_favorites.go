@@ -53,11 +53,11 @@ func (t *favoritesTab) createList(delegate *stationDelegate, width int, height i
 
 func (t *favoritesTab) Init(m *Model) tea.Cmd {
 	t.viewMsg = loadingMsg
-	t.list = t.createList(m.delegate, m.width, m.totHeight-m.headerHeight)
+	t.list = t.createList(m.delegate, m.listWidth, m.totHeight-m.headerHeight-2)
 	return m.favoritesReqCmd
 }
 
-func (t *favoritesTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
+func (t *favoritesTab) Update(m *Model, msg tea.Msg) (uiTab, tea.Cmd) {
 	logTeaMsg(msg, "ui.favoritesTab.Update")
 
 	var cmds []tea.Cmd
@@ -124,7 +124,7 @@ func (t *favoritesTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		s, idx := t.getListStationByUUID(msg.uuid)
 		if s != nil {
 			t.list.Select(*idx)
-			return m, m.playStationCmd(*s)
+			return t, m.playStationCmd(*s)
 		}
 
 	case toggleFavoriteMsg:
@@ -134,8 +134,8 @@ func (t *favoritesTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			its := t.list.Items()
 			for i := range its {
-				s := its[i].(model.Station)
-				if s.Stationuuid == msg.station.Stationuuid {
+				s, ok := its[i].(model.Station)
+				if ok && s.Stationuuid == msg.station.Stationuuid {
 					t.list.RemoveItem(i)
 					break
 				}
@@ -160,21 +160,20 @@ func (t *favoritesTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	case toggleInfoMsg:
 		if msg.enable {
 			cmds = append(cmds, t.initInfoModel(m, msg))
-			return m, tea.Batch(cmds...)
+			return t, tea.Batch(cmds...)
 		} else {
 			t.listKeymap.setEnabled(true)
 		}
 
 	case tea.KeyMsg:
 		if t.IsInfoEnabled() || t.IsCustomStationEnabled() {
-			return m, tea.Batch(cmds...)
+			return t, tea.Batch(cmds...)
 		}
 
 		if key.Matches(msg, t.listKeymap.toNowPlaying) {
 			newListModel, cmd := t.list.Update(msg)
 			t.list = newListModel
-			cmds = append(cmds, cmd)
-			t.toNowPlaying(m)
+			return t, tea.Batch(cmd, t.toNowPlaying(m))
 		}
 
 		if t.IsFiltering() {
@@ -183,13 +182,13 @@ func (t *favoritesTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch {
 		case key.Matches(msg, t.list.KeyMap.Quit, t.list.KeyMap.ForceQuit):
-			return m, tea.Quit
+			return t, tea.Quit
 
 		case key.Matches(msg, t.listKeymap.addCustomFavorite):
 			t.listKeymap.setEnabled(false)
-			t.customStationModel.setSize(m.width, m.totHeight-m.headerHeight)
+			t.customStationModel.setSize(m.width, m.totHeight-m.headerHeight-2)
 			cmds = append(cmds, t.customStationModel.Init())
-			return m, tea.Batch(cmds...)
+			return t, tea.Batch(cmds...)
 
 		case key.Matches(msg, m.delegate.keymap.delete):
 			selStation, ok := t.list.SelectedItem().(model.Station)
@@ -227,7 +226,8 @@ func (t *favoritesTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, t.listKeymap.search):
 			m.toBrowseTab()
-			return m.tabs[browseTabIx].Update(m, msg)
+			_, cmd := m.tabs[browseTabIx].Update(m, msg)
+			return t, cmd
 
 		case key.Matches(msg, t.listKeymap.nextTab, t.listKeymap.browseTab):
 			m.toBrowseTab()
@@ -236,7 +236,7 @@ func (t *favoritesTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.toHistoryTab()
 
 		case key.Matches(msg, t.listKeymap.prevTab, t.listKeymap.settingsTab):
-			return m, m.toSettingsTab()
+			return t, m.toSettingsTab()
 
 		case key.Matches(msg, t.listKeymap.stationView):
 			m.changeStationView()
@@ -250,7 +250,7 @@ func (t *favoritesTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	t.list = newListModel
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return t, tea.Batch(cmds...)
 }
 
 func (t *favoritesTab) View() string {

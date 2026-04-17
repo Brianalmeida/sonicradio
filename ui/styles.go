@@ -16,11 +16,11 @@ const (
 	TabGapDistance = 2
 	HeaderPadDist  = 2
 
-	FavChar      = "  ★"
-	AutoplayChar = " Auto"
-	PlayChar     = "\u2877"
-	PauseChar    = "\u28FF"
-	LineChar     = "\u2847"
+	FavChar      = " 󰓇"
+	AutoplayChar = " 󰑈"
+	PlayChar     = "󰐊"
+	PauseChar    = "󰏤"
+	LineChar     = "│"
 )
 
 type Style struct {

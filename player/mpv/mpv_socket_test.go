@@ -3,6 +3,7 @@ package mpv
 import (
 	"context"
 	"testing"
+	"time"
 )
 
 func TestMpvSocket_Play(t *testing.T) {
@@ -24,6 +25,8 @@ func TestMpvSocket_Play(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	time.Sleep(1 * time.Second)
 
 	m := p.Metadata()
 	if m.Err != nil {

@@ -40,7 +40,7 @@ const (
 
 type uiTab interface {
 	Init(m *Model) tea.Cmd
-	Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd)
+	Update(m *Model, msg tea.Msg) (uiTab, tea.Cmd)
 	View() string
 }
 
@@ -105,7 +105,7 @@ func (t *stationsTabBase) IsFiltering() bool {
 	return t.list.FilterState() == list.Filtering
 }
 
-func (t *stationsTabBase) toNowPlaying(m *Model) {
+func (t *stationsTabBase) toNowPlaying(m *Model) tea.Cmd {
 	log := slog.With("method", "ui.stationsTabBase.toNowPlaying")
 	log.Info("begin")
 	defer log.Info("end")
@@ -119,12 +119,12 @@ func (t *stationsTabBase) toNowPlaying(m *Model) {
 	} else if m.delegate.prevPlaying != nil {
 		uuid = m.delegate.prevPlaying.Stationuuid
 	} else {
-		return
+		return nil
 	}
 	selIndex := -1
 	items := t.list.VisibleItems()
 	for ix := range items {
-		if items[ix].(model.Station).Stationuuid == uuid {
+		if s, ok := items[ix].(model.Station); ok && s.Stationuuid == uuid {
 			selIndex = ix
 			break
 		}
@@ -132,6 +132,7 @@ func (t *stationsTabBase) toNowPlaying(m *Model) {
 	if selIndex > -1 {
 		t.list.Select(selIndex)
 	}
+	return nil
 }
 
 func (t *stationsTabBase) IsSearchEnabled() bool {
@@ -154,7 +155,7 @@ func (*stationsTabBase) newSizeMsg(sizeMsg tea.WindowSizeMsg, m *Model) tea.Wind
 
 func (t *stationsTabBase) initInfoModel(m *Model, msg toggleInfoMsg) tea.Cmd {
 	t.listKeymap.setEnabled(false)
-	t.infoModel.setSize(m.width, m.totHeight-m.headerHeight)
+	t.infoModel.setSize(m.listWidth, m.totHeight-m.headerHeight-2)
 	return t.infoModel.Init(msg.station)
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mattn/go-runewidth"
 	"github.com/dancnb/sonicradio/config"
 )
 
@@ -20,6 +21,7 @@ const (
 )
 
 type historyTab struct {
+	progr   *tea.Program
 	cfg     *config.Value
 	style   *Style
 	viewMsg string
@@ -99,14 +101,17 @@ func (t *historyTab) handleHistoryUpdates(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case entries := <-t.cfg.HistoryChan:
-			t.setEntries(entries)
+			if t.progr != nil {
+				t.progr.Send(historyUpdateMsg{entries: entries})
+			}
 		}
 	}
 }
 
 func (t *historyTab) Init(m *Model) tea.Cmd {
+	t.progr = m.Progr
 	t.viewMsg = emptyHistoryMsg
-	t.createList(m.width, m.totHeight-m.headerHeight)
+	t.createList(m.listWidth, m.totHeight-m.headerHeight-2)
 	return t.setEntries(t.cfg.History)
 }
 
@@ -204,12 +209,15 @@ func (t *historyTab) createList(width int, height int) {
 	t.list = l
 }
 
-func (t *historyTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
+func (t *historyTab) Update(m *Model, msg tea.Msg) (uiTab, tea.Cmd) {
 	logTeaMsg(msg, "ui.historyTab.Update")
 
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case historyUpdateMsg:
+		return t, t.setEntries(msg.entries)
+
 	case tea.WindowSizeMsg:
 		h, v := t.style.DocStyle.GetFrameSize()
 		t.list.SetSize(msg.Width-h, msg.Height-m.headerHeight-v)
@@ -221,30 +229,33 @@ func (t *historyTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch {
 		case key.Matches(msg, t.list.KeyMap.Quit, t.list.KeyMap.ForceQuit):
-			return m, tea.Quit
+			return t, tea.Quit
 
 		case key.Matches(msg, t.keymap.play):
 			e, _ := t.list.SelectedItem().(config.HistoryEntry)
 			if m.cfg.IsFavorite(e.Uuid) {
 				m.toFavoritesTab()
-				return m.tabs[favoriteTabIx].Update(m, playHistoryEntryMsg{e.Uuid})
+				_, cmd := m.tabs[favoriteTabIx].Update(m, playHistoryEntryMsg{e.Uuid})
+				return t, cmd
 			}
 			m.toBrowseTab()
-			return m.tabs[browseTabIx].Update(m, playHistoryEntryMsg{e.Uuid})
+			_, cmd := m.tabs[browseTabIx].Update(m, playHistoryEntryMsg{e.Uuid})
+			return t, cmd
 
 		case key.Matches(msg, t.keymap.deleteOne):
-			return m, t.deleteOneCmd()
+			return t, t.deleteOneCmd()
 		case key.Matches(msg, t.keymap.deleteAll):
-			return m, t.deleteAllCmd()
+			return t, t.deleteAllCmd()
 
 		case key.Matches(msg, t.keymap.search):
 			m.toBrowseTab()
-			return m.tabs[browseTabIx].Update(m, msg)
+			_, cmd := m.tabs[browseTabIx].Update(m, msg)
+			return t, cmd
 		case key.Matches(msg, t.keymap.digits...):
 			t.doJump(msg)
 
 		case key.Matches(msg, t.keymap.nextTab, t.keymap.settingsTab):
-			return m, m.toSettingsTab()
+			return t, m.toSettingsTab()
 
 		case key.Matches(msg, t.keymap.favoritesTab):
 			m.toFavoritesTab()
@@ -258,7 +269,7 @@ func (t *historyTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	t.list = newListModel
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return t, tea.Batch(cmds...)
 }
 
 func (t *historyTab) doJump(msg tea.KeyMsg) {
@@ -318,14 +329,7 @@ func (d *historyEntryDelegate) Render(w io.Writer, m list.Model, index int, item
 	isSel := index == m.Index()
 	var res strings.Builder
 
-	prefix := fmt.Sprintf("%d. ", index+1)
-	if index+1 < 10 {
-		prefix = fmt.Sprintf("   %s", prefix)
-	} else if index+1 < 100 {
-		prefix = fmt.Sprintf("  %s", prefix)
-	} else if index+1 < 1000 {
-		prefix = fmt.Sprintf(" %s", prefix)
-	}
+	prefix := IndexString(index + 1)
 	listWidth := m.Width()
 	station := entry.Title()
 
@@ -340,9 +344,7 @@ func (d *historyEntryDelegate) Render(w io.Writer, m list.Model, index int, item
 		descStyle = d.style.HistorySelDescStyle
 	}
 
-	for lipgloss.Width(itStyle.Render(station)) > maxWidth && len(station) > 0 {
-		station = station[:len(station)-1]
-	}
+	station = runewidth.Truncate(station, maxWidth, "…")
 	nameRender := itStyle.Render(station)
 	res.WriteString(nameRender)
 	hFill := max(listWidth-lipgloss.Width(prefixRender)-lipgloss.Width(nameRender)-HeaderPadDist, 0)
@@ -351,9 +353,7 @@ func (d *historyEntryDelegate) Render(w io.Writer, m list.Model, index int, item
 
 	res.WriteString(d.style.PrefixStyle.Render(strings.Repeat(" ", utf8.RuneCountInString(prefix))))
 	desc := entry.Description()
-	for lipgloss.Width(descStyle.Render(desc)) > maxWidth && len(desc) > 0 {
-		desc = desc[:len(desc)-1]
-	}
+	desc = runewidth.Truncate(desc, maxWidth, "…")
 	descRender := descStyle.Render(desc)
 	res.WriteString(descRender)
 	hFill = max(listWidth-lipgloss.Width(prefixRender)-lipgloss.Width(descRender)-HeaderPadDist, 0)

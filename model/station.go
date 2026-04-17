@@ -11,7 +11,7 @@ type Station struct {
 	// Changeuuid  string `json:"changeuuid"`  // A globally unique identifier for the change of the station information
 	// Serveruuid  interface{} `json:"serveruuid"`
 	// URLResolved     string      `json:"url_resolved"`
-	// Favicon         string      `json:"favicon"`
+	Favicon         string      `json:"favicon"`
 
 	Stationuuid string `json:"stationuuid"` // A globally unique identifier for the station
 	Name        string `json:"name"`        // 	The name of the station

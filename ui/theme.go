@@ -59,4 +59,19 @@ var Themes = []Theme{
 		Dark:  ColorProfile{primaryColor: "#e5e5e5ff", secondaryColor: "#bdbdbdff", invertedPrimaryColor: "#2e2e2eff", invertedSecondaryColor: "#818181ff"},
 		Light: ColorProfile{primaryColor: "#2e2e2eff", secondaryColor: "#818181ff", invertedPrimaryColor: "#e5e5e5ff", invertedSecondaryColor: "#bdbdbdff"},
 	},
+	{
+		Name:  "Catppuccin Macchiato",
+		Dark:  ColorProfile{primaryColor: "#8aadf4", secondaryColor: "#c6a0f6", invertedPrimaryColor: "#24273a", invertedSecondaryColor: "#494d64"},
+		Light: ColorProfile{primaryColor: "#1e66f5", secondaryColor: "#8839ef", invertedPrimaryColor: "#eff1f5", invertedSecondaryColor: "#ccd0da"},
+	},
+	{
+		Name:  "Nord",
+		Dark:  ColorProfile{primaryColor: "#88C0D0", secondaryColor: "#A3BE8C", invertedPrimaryColor: "#2E3440", invertedSecondaryColor: "#4C566A"},
+		Light: ColorProfile{primaryColor: "#5E81AC", secondaryColor: "#BF616A", invertedPrimaryColor: "#ECEFF4", invertedSecondaryColor: "#D8DEE9"},
+	},
+	{
+		Name:  "Tokyo Night",
+		Dark:  ColorProfile{primaryColor: "#7aa2f7", secondaryColor: "#bb9af7", invertedPrimaryColor: "#1a1b26", invertedSecondaryColor: "#292e42"},
+		Light: ColorProfile{primaryColor: "#2e7de9", secondaryColor: "#9854f1", invertedPrimaryColor: "#d5d6db", invertedSecondaryColor: "#c4c8da"},
+	},
 }

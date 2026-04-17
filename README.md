@@ -18,6 +18,14 @@ A TUI radio player making use of [Radio Browser API](https://www.radio-browser.i
   go install github.com/dancnb/sonicradio/cmd/sonicradio_external@latest  
   ```
 
+- ### Build locally:
+   ``` 
+    go build -o sonicradio ./cmd/sonicradio/main.go
+   ```
+    
+
+---
+
 - ### Clone this repository and build from source.
 
   Depending on version (for the internal player implementation), some additional prerequisites are needed based on the platform (ex: CGO required for non-Windows), since this project uses <https://github.com/gopxl/beep>, respectively <https://github.com/ebitengine/oto>.

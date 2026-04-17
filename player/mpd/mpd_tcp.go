@@ -276,7 +276,6 @@ func (m *Mpd) Seek(amtSec int) *model.Metadata {
 	} else if strings.Contains(strings.ToLower(out), notSeekableMsg) {
 		return nil
 	}
-
 	return m.Metadata()
 }
 

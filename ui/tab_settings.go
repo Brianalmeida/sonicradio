@@ -202,7 +202,7 @@ func (s *settingsTab) loadConfig() {
 }
 
 func (s *settingsTab) Init(m *Model) tea.Cmd {
-	s.setSize(m.width, m.totHeight-m.headerHeight)
+	s.setSize(m.listWidth, m.totHeight-m.headerHeight-2)
 
 	showAll := false
 	s.help.ShowAll = showAll
@@ -279,7 +279,7 @@ func (s *settingsTab) setSize(width, height int) {
 	s.help.Width = s.width
 }
 
-func (s *settingsTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
+func (s *settingsTab) Update(m *Model, msg tea.Msg) (uiTab, tea.Cmd) {
 	logTeaMsg(msg, "ui.settingsTab.Update")
 
 	var cmds []tea.Cmd
@@ -303,12 +303,12 @@ func (s *settingsTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.CallbackFn != nil {
 			msg.CallbackFn(idx)
 		}
-		return m, tea.Batch(cmds...)
+		return s, tea.Batch(cmds...)
 
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, s.keymap.quit):
-			return m, tea.Quit
+			return s, tea.Quit
 
 		case key.Matches(msg, s.keymap.showFullHelp):
 			fallthrough
@@ -316,12 +316,13 @@ func (s *settingsTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			s.help.ShowAll = !s.help.ShowAll
 			s.keymap.showFullHelp.SetEnabled(!s.help.ShowAll)
 			s.keymap.closeFullHelp.SetEnabled(s.help.ShowAll)
-			return m, tea.Batch(cmds...)
+			return s, tea.Batch(cmds...)
 
 		// case key.Matches(msg, s.keymap.search):
 		// 	s.onExit()
 		// 	m.toBrowseTab()
-		// 	return m.tabs[browseTabIx].Update(m, msg)
+		// 	_, cmd := m.tabs[browseTabIx].Update(m, msg)
+		// 	return s, cmd
 		case key.Matches(msg, s.keymap.nextTab, s.keymap.favoritesTab):
 			s.onExit()
 			m.toFavoritesTab()
@@ -336,21 +337,21 @@ func (s *settingsTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			s.idx++
 			s.idx = s.idx % settingsInputIdx(len(s.inputs))
 			cmds = s.changeInput(cmds)
-			return m, tea.Batch(cmds...)
+			return s, tea.Batch(cmds...)
 		case key.Matches(msg, s.keymap.prevInput):
 			if s.idx == 0 {
 				s.idx = settingsInputIdx(len(s.inputs))
 			}
 			s.idx--
 			cmds = s.changeInput(cmds)
-			return m, tea.Batch(cmds...)
+			return s, tea.Batch(cmds...)
 		case key.Matches(msg, s.keymap.enterInput):
 			s.keymap.setEnable(s.inputs[s.idx].Keymap() == nil, s.help.ShowAll)
 			s.inputs[s.idx].SetActive()
-			return m, tea.Batch(cmds...)
+			return s, tea.Batch(cmds...)
 		case key.Matches(msg, s.keymap.reset):
 			s.resetSettings()
-			return m, tea.Batch(cmds...)
+			return s, tea.Batch(cmds...)
 		}
 	}
 
@@ -358,7 +359,7 @@ func (s *settingsTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	s.inputs[s.idx], cmd = s.inputs[s.idx].Update(msg)
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return s, tea.Batch(cmds...)
 }
 
 func (s *settingsTab) resetSettings() {

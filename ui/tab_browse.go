@@ -50,11 +50,11 @@ func (t *browseTab) createList(delegate *stationDelegate, width int, height int)
 
 func (t *browseTab) Init(m *Model) tea.Cmd {
 	t.viewMsg = loadingMsg
-	t.list = t.createList(m.delegate, m.width, m.totHeight-m.headerHeight)
+	t.list = t.createList(m.delegate, m.listWidth, m.totHeight-m.headerHeight-2)
 	return m.topStationsCmd
 }
 
-func (t *browseTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
+func (t *browseTab) Update(m *Model, msg tea.Msg) (uiTab, tea.Cmd) {
 	logTeaMsg(msg, "ui.browseTab.Update")
 
 	var cmds []tea.Cmd
@@ -85,7 +85,7 @@ func (t *browseTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	case topStationsRespMsg:
 		m.updateStatus(string(msg.statusMsg))
 		t.viewMsg = string(msg.viewMsg)
-		copy(t.defTopStations, msg.stations)
+		t.defTopStations = msg.stations
 		cmd := t.setStations(msg.stations)
 		cmds = append(cmds, cmd)
 
@@ -93,15 +93,15 @@ func (t *browseTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		s, idx := t.getListStationByUUID(msg.uuid)
 		if s != nil {
 			t.list.Select(*idx)
-			return m, m.playStationCmd(*s)
+			return t, m.playStationCmd(*s)
 		} else {
-			return m, m.playUUIDCmd(msg.uuid)
+			return t, m.playUUIDCmd(msg.uuid)
 		}
 	case playUUIDRespMsg:
 		m.updateStatus(string(msg.statusMsg))
 		t.viewMsg = string(msg.viewMsg)
 		if len(msg.stations) > 0 {
-			return m, tea.Sequence(
+			return t, tea.Sequence(
 				t.setStations(msg.stations),
 				m.playStationCmd(msg.stations[0]),
 			)
@@ -121,21 +121,20 @@ func (t *browseTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	case toggleInfoMsg:
 		if msg.enable {
 			cmds = append(cmds, t.initInfoModel(m, msg))
-			return m, tea.Batch(cmds...)
+			return t, tea.Batch(cmds...)
 		} else {
 			t.listKeymap.setEnabled(true)
 		}
 
 	case tea.KeyMsg:
 		if t.IsSearchEnabled() || t.IsInfoEnabled() {
-			return m, tea.Batch(cmds...)
+			return t, tea.Batch(cmds...)
 		}
 
 		if key.Matches(msg, t.listKeymap.toNowPlaying) {
 			newListModel, cmd := t.list.Update(msg)
 			t.list = newListModel
-			cmds = append(cmds, cmd)
-			t.toNowPlaying(m)
+			return t, tea.Batch(cmd, t.toNowPlaying(m))
 		}
 
 		if t.IsFiltering() {
@@ -144,13 +143,13 @@ func (t *browseTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch {
 		case key.Matches(msg, t.list.KeyMap.Quit, t.list.KeyMap.ForceQuit):
-			return m, tea.Quit
+			return t, tea.Quit
 
 		case key.Matches(msg, t.listKeymap.search):
 			t.listKeymap.setEnabled(false)
-			t.searchModel.setSize(m.width, m.totHeight-m.headerHeight)
+			t.searchModel.setSize(m.width, m.totHeight-m.headerHeight-2)
 			cmds = append(cmds, t.searchModel.Init())
-			return m, tea.Batch(cmds...)
+			return t, tea.Batch(cmds...)
 
 		case key.Matches(msg, t.listKeymap.nextTab, t.listKeymap.historyTab):
 			m.toHistoryTab()
@@ -159,7 +158,7 @@ func (t *browseTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.toFavoritesTab()
 
 		case key.Matches(msg, t.listKeymap.settingsTab):
-			return m, m.toSettingsTab()
+			return t, m.toSettingsTab()
 
 		case key.Matches(msg, t.listKeymap.stationView):
 			m.changeStationView()
@@ -173,7 +172,7 @@ func (t *browseTab) Update(m *Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	t.list = newListModel
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return t, tea.Batch(cmds...)
 }
 
 func (t *browseTab) setStations(stations []model.Station) tea.Cmd {
