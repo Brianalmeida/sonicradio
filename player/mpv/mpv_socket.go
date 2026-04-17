@@ -121,6 +121,10 @@ func mpvCmd(ctx context.Context, sockFile string) (*exec.Cmd, error) {
 		log.Error("mpv cmd start", "error", err)
 		return nil, err
 	}
+	// Reap the process in the background to prevent zombies and FD leaks
+	go func() {
+		_ = cmd.Wait()
+	}()
 	log.Info("mpv cmd started", "pid", cmd.Process.Pid)
 	return cmd, nil
 }

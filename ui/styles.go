@@ -18,8 +18,6 @@ const (
 
 	FavChar      = " 󰓇"
 	AutoplayChar = " 󰑈"
-	PlayChar     = "󰐊"
-	PauseChar    = "󰏤"
 	LineChar     = "│"
 )
 

@@ -30,70 +30,105 @@ func newStationDelegate(cfg *config.Value, s *Style, p *player.Player, b *browse
 		cfg:             cfg,
 		style:           s,
 		keymap:          keymap,
-		defaultDelegate: d,
+		DefaultDelegate: d,
 	}
 	st.setStationView(cfg.StationView)
 	return st
 }
 
 type stationDelegate struct {
+	list.DefaultDelegate
 	player *player.Player
 	b      *browser.API
 	cfg    *config.Value
 	style  *Style
 
 	playingMtx  sync.RWMutex
+	actionMtx   sync.Mutex
 	prevPlaying *model.Station
 	currPlaying *model.Station
 
 	deleted *model.Station
 
 	keymap *delegateKeyMap
-
-	defaultDelegate list.DefaultDelegate
 }
 
 func (d *stationDelegate) setStationView(v config.StationView) {
 	switch v {
 	case config.DefaultView:
-		d.defaultDelegate.SetHeight(2)
-		d.defaultDelegate.SetSpacing(1)
+		d.DefaultDelegate.SetHeight(2)
+		d.DefaultDelegate.SetSpacing(1)
 	case config.CompactView:
-		d.defaultDelegate.SetHeight(1)
-		d.defaultDelegate.SetSpacing(1)
+		d.DefaultDelegate.SetHeight(1)
+		d.DefaultDelegate.SetSpacing(1)
 	case config.MinimalView:
-		d.defaultDelegate.SetHeight(1)
-		d.defaultDelegate.SetSpacing(0)
+		d.DefaultDelegate.SetHeight(1)
+		d.DefaultDelegate.SetSpacing(0)
 	}
 }
 
-func (d *stationDelegate) Height() int {
-	return d.defaultDelegate.Height()
-}
+func (d *stationDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
+	s, ok := item.(model.Station)
+	if !ok {
+		return
+	}
 
-func (d *stationDelegate) Spacing() int {
-	return d.defaultDelegate.Spacing()
+	d.playingMtx.RLock()
+	isPlaying := d.currPlaying != nil && d.currPlaying.Stationuuid == s.Stationuuid
+	d.playingMtx.RUnlock()
+
+	isSel := index == m.Index()
+
+	prefix := IndexString(index + 1)
+
+	itStyle := d.style.SecondaryColorStyle
+	descStyle := d.style.PrimaryColorStyle
+	prefixStyle := d.style.PrefixStyle
+
+	if isSel {
+		itStyle = d.style.SelItemStyle
+		descStyle = d.style.SelDescStyle
+		prefixStyle = d.style.SelectedBorderStyle
+		if isPlaying {
+			itStyle = d.style.SelNowPlayingStyle
+			descStyle = d.style.SelNowPlayingDescStyle
+		}
+	} else if isPlaying {
+		itStyle = d.style.SongTitleStyle
+		prefixStyle = d.style.NowPlayingPrefixStyle
+	}
+
+	name := s.Name
+	if d.cfg.IsFavorite(s.Stationuuid) {
+		name += FavChar
+	}
+	if d.cfg.AutoplayFavorite == s.Stationuuid {
+		name += AutoplayChar
+	}
+
+	var res string
+	switch d.cfg.StationView {
+	case config.DefaultView:
+		res = d.renderDefaultView(prefix, name, s.Homepage, m.Width(), 0, prefixStyle, itStyle, descStyle)
+	case config.CompactView:
+		res = d.renderCompactView(prefix, name, s.Homepage, m.Width(), 0, prefixStyle, itStyle, descStyle)
+	case config.MinimalView:
+		res = d.renderMinimalView(prefix, name, s.Homepage, m.Width(), 0, prefixStyle, itStyle, descStyle)
+	}
+
+	_, _ = fmt.Fprint(w, res)
 }
 
 func (d *stationDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
 	logTeaMsg(msg, "ui.stationDelegate.Update")
-	selStation, isSel := m.SelectedItem().(model.Station)
+	selStation, ok := m.SelectedItem().(model.Station)
+	if !ok {
+		return nil
+	}
 
-	switch msg := msg.(type) {
-	case toggleInfoMsg:
-		if !msg.enable {
-			d.keymap.info.SetEnabled(true)
-		}
-
-	case tea.KeyMsg:
+	if msg, ok := msg.(tea.KeyMsg); ok {
+		isSel := m.Index() != -1
 		switch {
-		case key.Matches(msg, d.keymap.info):
-			if !isSel {
-				break
-			}
-			d.keymap.info.SetEnabled(false)
-			return func() tea.Msg { return toggleInfoMsg{enable: true, station: selStation} }
-
 		case key.Matches(msg, d.keymap.toggleFavorite):
 			if !isSel {
 				break
@@ -149,15 +184,12 @@ func (d *stationDelegate) shouldPaste(m *list.Model) bool {
 	if d.deleted == nil {
 		return false
 	}
-	its := m.Items()
-	dupl := false
-	for ii := range its {
-		if d.deleted.Stationuuid == its[ii].(model.Station).Stationuuid {
-			dupl = true
-			break
+	for _, it := range m.Items() {
+		if s, ok := it.(model.Station); ok && s.Stationuuid == d.deleted.Stationuuid {
+			return false
 		}
 	}
-	return !dupl
+	return true
 }
 
 func (d *stationDelegate) pauseCmd() tea.Cmd {
@@ -166,19 +198,27 @@ func (d *stationDelegate) pauseCmd() tea.Cmd {
 		log.Info("begin")
 		defer log.Info("end")
 
-		d.playingMtx.Lock()
-		defer d.playingMtx.Unlock()
+		d.actionMtx.Lock()
+		defer d.actionMtx.Unlock()
 
-		if d.currPlaying == nil {
+		d.playingMtx.RLock()
+		curr := d.currPlaying
+		d.playingMtx.RUnlock()
+
+		if curr == nil {
 			return nil
 		}
 		err := d.player.Pause(true)
 		if err != nil {
 			log.Error(fmt.Sprintf("player pause: %v", err))
-			return pauseRespMsg{fmt.Sprintf("Could not pause station %s (%s)!", d.currPlaying.Name, d.currPlaying.URL)}
+			return pauseRespMsg{fmt.Sprintf("Could not pause station %s (%s)!", curr.Name, curr.URL)}
 		}
+
+		d.playingMtx.Lock()
 		d.prevPlaying = d.currPlaying
 		d.currPlaying = nil
+		d.playingMtx.Unlock()
+
 		return pauseRespMsg{}
 	}
 }
@@ -189,20 +229,27 @@ func (d *stationDelegate) resumeCmd() tea.Cmd {
 		log.Info("begin")
 		defer log.Info("end")
 
-		d.playingMtx.Lock()
-		defer d.playingMtx.Unlock()
+		d.actionMtx.Lock()
+		defer d.actionMtx.Unlock()
 
-		if d.prevPlaying == nil {
+		d.playingMtx.RLock()
+		prev := d.prevPlaying
+		d.playingMtx.RUnlock()
+
+		if prev == nil {
 			return nil
 		}
 		err := d.player.Pause(false)
 		if err != nil {
 			log.Error(fmt.Sprintf("player resume: %v", err))
-			return playRespMsg{fmt.Sprintf("Could not resume playback for station %s (%s)!", d.currPlaying.Name, d.currPlaying.URL)}
+			return pauseRespMsg{fmt.Sprintf("Could not resume station %s (%s)!", prev.Name, prev.URL)}
 		}
+
+		d.playingMtx.Lock()
 		d.currPlaying = d.prevPlaying
-		d.prevPlaying = nil
-		return playRespMsg{}
+		d.playingMtx.Unlock()
+
+		return pauseRespMsg{}
 	}
 }
 
@@ -212,8 +259,9 @@ func (d *stationDelegate) playCmd(s model.Station) tea.Cmd {
 		log.Info("begin")
 		defer log.Info("end")
 
-		d.playingMtx.Lock()
-		defer d.playingMtx.Unlock()
+		// Serialize player backend actions to prevent data races and zombies
+		d.actionMtx.Lock()
+		defer d.actionMtx.Unlock()
 
 		log.Info("playing", "id", s.Stationuuid)
 		if !s.IsCustom {
@@ -226,89 +274,21 @@ func (d *stationDelegate) playCmd(s model.Station) tea.Cmd {
 			log.Error(errMsg)
 			return playRespMsg{fmt.Sprintf("Could not start playback for %s: %s", s.Name, err.Error())}
 		}
+
+		d.playingMtx.Lock()
 		d.prevPlaying = d.currPlaying
 		d.currPlaying = &s
+		d.playingMtx.Unlock()
+
 		return playRespMsg{}
 	}
 }
 
 func (d *stationDelegate) increaseCounter(station model.Station) {
-	_ = d.b.StationCounter(station.Stationuuid)
-}
-
-func (d *stationDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	s, ok := listItem.(model.Station)
-	if !ok {
-		return
-	}
-	name := s.Name
-	if d.cfg.IsFavorite(s.Stationuuid) {
-		name += FavChar
-	}
-	if d.cfg.AutoplayFavorite == s.Stationuuid {
-		name += d.style.BaseBold.Render(AutoplayChar)
-	}
-
-	isSel := index == m.Index()
-
-	d.playingMtx.RLock()
-	defer d.playingMtx.RUnlock()
-
-	isCurr := d.currPlaying != nil && d.currPlaying.Stationuuid == s.Stationuuid
-	isPrev := d.currPlaying == nil && d.prevPlaying != nil && d.prevPlaying.Stationuuid == s.Stationuuid
-	var str string
-
-	prefix := IndexString(index + 1)
-
-	listWidth := m.Width()
-	if isCurr || isPrev {
-		itStyle := d.style.PrimaryColorStyle
-		descStyle := d.style.SecondaryColorStyle
-		if isSel {
-			itStyle = d.style.SelNowPlayingStyle
-			descStyle = d.style.SelNowPlayingDescStyle
-		}
-		prefixStyle := d.style.NowPlayingPrefixStyle
-		widthOffset := 1
-
-		str = d.renderStationView(prefix, name, s.Description(), listWidth, widthOffset, prefixStyle, itStyle, descStyle)
-
-		str = d.style.SelectedBorderStyle.Render(str)
-	} else {
-		itStyle := d.style.PrimaryColorStyle
-		descStyle := d.style.SecondaryColorStyle
-		if isSel {
-			itStyle = d.style.SelItemStyle
-			descStyle = d.style.SelDescStyle
-		}
-		prefixStyle := d.style.PrefixStyle
-		widthOffset := 0
-
-		str = d.renderStationView(prefix, name, s.Description(), listWidth, widthOffset, prefixStyle, itStyle, descStyle)
-	}
-
-	_, _ = fmt.Fprint(w, str)
-}
-
-func (d *stationDelegate) renderStationView(
-	prefix string,
-	name string,
-	desc string,
-	listWidth int,
-	widthOffset int,
-	prefixStyle lipgloss.Style,
-	itStyle lipgloss.Style,
-	descStyle lipgloss.Style,
-) string {
-	switch d.cfg.StationView {
-	case config.DefaultView:
-		return d.renderDefaultView(prefix, name, desc, listWidth, widthOffset, prefixStyle, itStyle, descStyle)
-	case config.CompactView:
-		return d.renderCompactView(prefix, name, desc, listWidth, widthOffset, prefixStyle, itStyle, descStyle)
-	case config.MinimalView:
-		return d.renderMinimalView(prefix, name, desc, listWidth, widthOffset, prefixStyle, itStyle, descStyle)
-	default:
-		return d.renderDefaultView(prefix, name, desc, listWidth, widthOffset, prefixStyle, itStyle, descStyle)
+	log := slog.With("method", "ui.stationDelegate.increaseCounter")
+	err := d.b.StationCounter(station.Stationuuid)
+	if err != nil {
+		log.Error(err.Error())
 	}
 }
 
@@ -400,52 +380,29 @@ func (d *stationDelegate) renderMinimalView(
 	return res.String()
 }
 
-func (d *stationDelegate) ShortHelp() []key.Binding {
-	return []key.Binding{
-		d.keymap.playSelected, d.keymap.pause, d.keymap.toggleFavorite, d.keymap.toggleAutoplay,
-	}
-}
-
-func (d *stationDelegate) FullHelp() [][]key.Binding {
-	return [][]key.Binding{
-		{
-			d.keymap.playSelected,
-			d.keymap.pause,
-			d.keymap.volumeDown,
-			d.keymap.volumeUp,
-			d.keymap.seekBack,
-			d.keymap.seekFw,
-			d.keymap.info,
-			d.keymap.toggleFavorite,
-			d.keymap.toggleAutoplay,
-			d.keymap.delete,
-			d.keymap.pasteAfter,
-			d.keymap.pasteBefore,
-		},
-	}
+type delegateKeyMap struct {
+	toggleFavorite key.Binding
+	toggleAutoplay key.Binding
+	delete         key.Binding
+	pasteAfter     key.Binding
+	pasteBefore    key.Binding
+	volumeDown     key.Binding
+	volumeUp       key.Binding
+	seekBack       key.Binding
+	seekFw         key.Binding
+	pause          key.Binding
+	playSelected   key.Binding
 }
 
 func newDelegateKeyMap() *delegateKeyMap {
 	return &delegateKeyMap{
-		pause: key.NewBinding(
-			key.WithKeys(" "),
-			key.WithHelp("space", "resume"),
-		),
-		playSelected: key.NewBinding(
-			key.WithKeys("enter", "l"),
-			key.WithHelp("enter/l", "play"),
-		),
-		info: key.NewBinding(
-			key.WithKeys("i"),
-			key.WithHelp("i", "station info"),
-		),
 		toggleFavorite: key.NewBinding(
 			key.WithKeys("f"),
-			key.WithHelp("f", "favorite station"),
+			key.WithHelp("f", "toggle favorite"),
 		),
 		toggleAutoplay: key.NewBinding(
 			key.WithKeys("a"),
-			key.WithHelp("a", "autoplay station"),
+			key.WithHelp("a", "toggle autoplay"),
 		),
 		delete: key.NewBinding(
 			key.WithKeys("d"),
@@ -457,38 +414,31 @@ func newDelegateKeyMap() *delegateKeyMap {
 		),
 		pasteBefore: key.NewBinding(
 			key.WithKeys("P"),
-			key.WithHelp("shift+p", "paste at"),
+			key.WithHelp("P", "paste before"),
+		),
+		volumeDown: key.NewBinding(
+			key.WithKeys("-"),
+			key.WithHelp("-", "volume -"),
 		),
 		volumeUp: key.NewBinding(
 			key.WithKeys("+", "="),
 			key.WithHelp("+", "volume +"),
 		),
-		volumeDown: key.NewBinding(
-			key.WithKeys("-", "_"),
-			key.WithHelp("-", "volume -"),
-		),
 		seekBack: key.NewBinding(
-			key.WithKeys("left", ",", "<"),
-			key.WithHelp("←/<", "seek backwards"),
+			key.WithKeys("left", "h"),
+			key.WithHelp("h/left", "seek -"),
 		),
 		seekFw: key.NewBinding(
-			key.WithKeys("right", ".", ">"),
-			key.WithHelp("→/>", "seek forward"),
+			key.WithKeys("right", "l"),
+			key.WithHelp("l/right", "seek +"),
+		),
+		pause: key.NewBinding(
+			key.WithKeys(" "),
+			key.WithHelp("space", "pause"),
+		),
+		playSelected: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("enter", "play"),
 		),
 	}
-}
-
-type delegateKeyMap struct {
-	pause          key.Binding
-	playSelected   key.Binding
-	info           key.Binding
-	toggleFavorite key.Binding
-	toggleAutoplay key.Binding
-	delete         key.Binding
-	pasteAfter     key.Binding
-	pasteBefore    key.Binding
-	volumeDown     key.Binding
-	volumeUp       key.Binding
-	seekBack       key.Binding
-	seekFw         key.Binding
 }

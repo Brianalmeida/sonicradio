@@ -168,19 +168,12 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) startIcySniffer(s smodel.Station) tea.Cmd {
+func (m *Model) startIcySniffer(ctx context.Context, s smodel.Station) tea.Cmd {
 	return func() tea.Msg {
-		if m.icyCancel != nil {
-			m.icyCancel()
-		}
-
 		// Security: Validate URL scheme
 		if !strings.HasPrefix(s.URL, "http://") && !strings.HasPrefix(s.URL, "https://") {
 			return nil
 		}
-
-		ctx, cancel := context.WithCancel(context.Background())
-		m.icyCancel = cancel
 
 		ch, err := metadata.FetchIcyMetadata(ctx, s.URL)
 		if err != nil {

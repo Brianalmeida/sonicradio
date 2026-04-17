@@ -89,6 +89,10 @@ func (f *FFPlay) play(url string) error {
 		log.Error("ffplay cmd start", "error", err)
 		return err
 	}
+	// Reap the process in the background to prevent zombies and FD leaks
+	go func() {
+		_ = cmd.Wait()
+	}()
 	f.playing = cmd
 	f.url = url
 	log.Info("ffplay cmd started", "pid", f.playing.Process.Pid)

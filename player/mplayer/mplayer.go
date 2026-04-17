@@ -98,6 +98,10 @@ func (m *Mplayer) getCmd(ctx context.Context, volume int) error {
 		log.Error("mplayer cmd start", "error", err)
 		return err
 	}
+	// Reap the process in the background to prevent zombies and FD leaks
+	go func() {
+		_ = cmd.Wait()
+	}()
 	m.cmd = cmd
 	m.wc = wc
 	m.rc = rc

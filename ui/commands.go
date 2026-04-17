@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -121,7 +122,16 @@ func (m *Model) playStationCmd(selStation model.Station) tea.Cmd {
 	m.songTitle = ""
 	m.playbackTime = 0
 	m.updateStatus(fmt.Sprintf("Connecting to %s...", selStation.Name))
-	cmds := []tea.Cmd{m.initSpinner(), m.delegate.playCmd(selStation), m.startIcySniffer(selStation)}
+
+	// Synchronously cancel the previous ICY sniffer before launching a new one
+	if m.icyCancel != nil {
+		m.icyCancel()
+		m.icyCancel = nil
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	m.icyCancel = cancel
+
+	cmds := []tea.Cmd{m.initSpinner(), m.delegate.playCmd(selStation), m.startIcySniffer(ctx, selStation)}
 	return tea.Batch(cmds...)
 }
 

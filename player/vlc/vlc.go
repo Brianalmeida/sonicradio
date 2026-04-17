@@ -129,6 +129,10 @@ func (v *Vlc) vlcCmd(ctx context.Context, addr string) (*exec.Cmd, error) {
 		log.Error("vlc cmd start", "error", err)
 		return nil, err
 	}
+	// Reap the process in the background to prevent zombies and FD leaks
+	go func() {
+		_ = cmd.Wait()
+	}()
 	log.Info("vlc cmd started", "pid", cmd.Process.Pid)
 	return cmd, nil
 }
