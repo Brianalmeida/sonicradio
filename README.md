@@ -109,3 +109,24 @@ Sonicradio is licensed under the [MIT License](LICENSE).
 
 [Bubbletea](https://github.com/charmbracelet/bubbletea/blob/master/LICENSE) MIT License
 
+### **Core TUI Framework (Charmbracelet Stack)**
+*   **`bubbletea`**: The main Terminal User Interface (TUI) framework.
+*   **`bubbles`**: Common TUI components (lists, inputs, etc.).
+*   **`lipgloss`**: Styling and layout definitions for the terminal.
+*   **`muesli/termenv`** & **`muesli/ansi`**: Terminal environment and ANSI escape sequence handling.
+
+### **Audio & Multimedia**
+*   **`beep`**: For audio playback and processing.
+*   **`image2ascii`**: Used to convert station artwork or images into ASCII art for the terminal.
+*   **`oto`**: Low-level library for playing sound across multiple platforms.
+*   **`go-mp3`** & **`oggvorbis`**: Decoders for MP3 and OGG audio formats.
+
+### **Utilities & System**
+*   **`uuid`**: For generating unique identifiers.
+*   **`npipe.v2`**: Windows named pipe implementation (likely for IPC).
+*   **`clipboard`**: For system clipboard integration.
+*   **`go-isatty`** & **`terminal-dimensions`**: Terminal capability and size detection.
+
+### **Development & Testing**
+*   **`testify`**: A toolkit for unit testing and assertions.
+
