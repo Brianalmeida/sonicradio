@@ -22,10 +22,15 @@ A TUI radio player making use of [Radio Browser API](https://www.radio-browser.i
   ```
 
 - ### Build locally:
-   ``` 
+    ```
+    git clone <repo-url>
+    ```
+    ```
+    cd sonicradio
+    ```
+    ``` 
     go build -o sonicradio ./cmd/sonicradio/main.go
-   ```
-    
+    ```
 
 ---
 
