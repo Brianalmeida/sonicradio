@@ -4,6 +4,9 @@ A TUI radio player making use of [Radio Browser API](https://www.radio-browser.i
 
 ![ Demo](demo.gif)
 
+<img width="3422" height="1328" alt="Screenshot From 2026-04-17 16-25-22" src="https://github.com/user-attachments/assets/f1079eb6-016c-4042-835e-66c14aeb31e9" />
+
+
 ## Installation
 
 - ### Install using go:
