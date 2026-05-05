@@ -15,55 +15,14 @@ type Theme struct {
 
 var Themes = []Theme{
 	{
-		Name:  "Duo Yellow",
-		Dark:  ColorProfile{primaryColor: "#D4DAF7", secondaryColor: "#D58610", invertedPrimaryColor: "#2D2D0B", invertedSecondaryColor: "#827545"},
-		Light: ColorProfile{primaryColor: "#2D2D0B", secondaryColor: "#827545", invertedPrimaryColor: "#D4DAF7", invertedSecondaryColor: "#D58610"},
-	},
-	{
-		Name:  "Duo Green",
-		Dark:  ColorProfile{primaryColor: "#F7D4D6", secondaryColor: "#6b9e47", invertedPrimaryColor: "#243518", invertedSecondaryColor: "#3c5828"},
-		Light: ColorProfile{primaryColor: "#243518", secondaryColor: "#3c5828", invertedPrimaryColor: "#F7D4D6", invertedSecondaryColor: "#6b9e47"},
-	},
-	{
-		Name:  "Duo Blue",
-		Dark:  ColorProfile{primaryColor: "#F7EDD4", secondaryColor: "#6d9edf", invertedPrimaryColor: "#1c467d", invertedSecondaryColor: "#2969bc"},
-		Light: ColorProfile{primaryColor: "#1c467d", secondaryColor: "#2969bc", invertedPrimaryColor: "#F7EDD4", invertedSecondaryColor: "#6d9edf"},
-	},
-	{
-		Name:  "Duo Red",
-		Dark:  ColorProfile{primaryColor: "#E3F7D4", secondaryColor: "#DE5145", invertedPrimaryColor: "#351D10", invertedSecondaryColor: "#8C4D2B"},
-		Light: ColorProfile{primaryColor: "#351D10", secondaryColor: "#8C4D2B", invertedPrimaryColor: "#E3F7D4", invertedSecondaryColor: "#DE5145"},
-	},
-	{
-		Name:  "Mono Yellow",
-		Dark:  ColorProfile{primaryColor: "#ffb641", secondaryColor: "#bd862d", invertedPrimaryColor: "#12100d", invertedSecondaryColor: "#4a4133"},
-		Light: ColorProfile{primaryColor: "#12100d", secondaryColor: "#4a4133", invertedPrimaryColor: "#ffb641", invertedSecondaryColor: "#bd862d"},
-	},
-	{
-		Name:  "Mono Green",
-		Dark:  ColorProfile{primaryColor: "#98c379", secondaryColor: "#6b9e47", invertedPrimaryColor: "#243518", invertedSecondaryColor: "#3c5828"},
-		Light: ColorProfile{primaryColor: "#243518", secondaryColor: "#3c5828", invertedPrimaryColor: "#98c379", invertedSecondaryColor: "#6b9e47"},
-	},
-	{
-		Name:  "Mono Blue",
-		Dark:  ColorProfile{primaryColor: "#abc8ed", secondaryColor: "#6d9edf", invertedPrimaryColor: "#1c467d", invertedSecondaryColor: "#2969bc"},
-		Light: ColorProfile{primaryColor: "#1c467d", secondaryColor: "#2969bc", invertedPrimaryColor: "#abc8ed", invertedSecondaryColor: "#6d9edf"},
-	},
-	{
-		Name:  "Mono Red",
-		Dark:  ColorProfile{primaryColor: "#e48189", secondaryColor: "#d7424e", invertedPrimaryColor: "#69161d", invertedSecondaryColor: "#931f29"},
-		Light: ColorProfile{primaryColor: "#69161d", secondaryColor: "#931f29", invertedPrimaryColor: "#e48189", invertedSecondaryColor: "#d7424e"},
-	},
-	{
 		Name:  "Grayscale",
 		Dark:  ColorProfile{primaryColor: "#e5e5e5ff", secondaryColor: "#bdbdbdff", invertedPrimaryColor: "#2e2e2eff", invertedSecondaryColor: "#818181ff"},
 		Light: ColorProfile{primaryColor: "#2e2e2eff", secondaryColor: "#818181ff", invertedPrimaryColor: "#e5e5e5ff", invertedSecondaryColor: "#bdbdbdff"},
 	},
-	// Added more themes to choose from on Apr 17th, 2026
 	{
 		Name:  "Catppuccin Macchiato",
-		Dark:  ColorProfile{primaryColor: "#8aadf4", secondaryColor: "#c6a0f6", invertedPrimaryColor: "#24273a", invertedSecondaryColor: "#494d64"},
-		Light: ColorProfile{primaryColor: "#1e66f5", secondaryColor: "#8839ef", invertedPrimaryColor: "#eff1f5", invertedSecondaryColor: "#ccd0da"},
+		Dark:  ColorProfile{primaryColor: "#f5bde6", secondaryColor: "#a6da95", invertedPrimaryColor: "#24273a", invertedSecondaryColor: "#494d64"},
+		Light: ColorProfile{primaryColor: "#ec7486", secondaryColor: "#8ccf7f", invertedPrimaryColor: "#cad3f5", invertedSecondaryColor: "#b8c0e0"},
 	},
 	{
 		Name:  "Nord",
@@ -72,7 +31,37 @@ var Themes = []Theme{
 	},
 	{
 		Name:  "Tokyo Night",
-		Dark:  ColorProfile{primaryColor: "#7aa2f7", secondaryColor: "#bb9af7", invertedPrimaryColor: "#1a1b26", invertedSecondaryColor: "#292e42"},
-		Light: ColorProfile{primaryColor: "#2e7de9", secondaryColor: "#9854f1", invertedPrimaryColor: "#d5d6db", invertedSecondaryColor: "#c4c8da"},
+		Dark:  ColorProfile{primaryColor: "#bb9af7", secondaryColor: "#e0af68", invertedPrimaryColor: "#1a1b26", invertedSecondaryColor: "#15161e"},
+		Light: ColorProfile{primaryColor: "#7aa2f7", secondaryColor: "#f7768e", invertedPrimaryColor: "#c0caf5", invertedSecondaryColor: "#a9b1d6"},
+	},
+	{
+		Name:  "Solarized",
+		Dark:  ColorProfile{primaryColor: "#2AA198", secondaryColor: "#B58900", invertedPrimaryColor: "#002B36", invertedSecondaryColor: "#073642"},
+		Light: ColorProfile{primaryColor: "#2AA198", secondaryColor: "#B58900", invertedPrimaryColor: "#FDF6E3", invertedSecondaryColor: "#EEE8D5"},
+	},
+	{
+		Name:  "Monokai",
+		Dark:  ColorProfile{primaryColor: "#F92672", secondaryColor: "#A6E22E", invertedPrimaryColor: "#272822", invertedSecondaryColor: "#75715E"},
+		Light: ColorProfile{primaryColor: "#F92672", secondaryColor: "#A6E22E", invertedPrimaryColor: "#F9F8F5", invertedSecondaryColor: "#E6DB74"},
+	},
+	{
+		Name:  "Nordfox",
+		Dark:  ColorProfile{primaryColor: "#88c0d0", secondaryColor: "#bf616a", invertedPrimaryColor: "#2e3440", invertedSecondaryColor: "#3b4252"},
+		Light: ColorProfile{primaryColor: "#81a1c1", secondaryColor: "#a3be8c", invertedPrimaryColor: "#e5e9f0", invertedSecondaryColor: "#e7ecf4"},
+	},
+	{
+		Name:  "Royal",
+		Dark:  ColorProfile{primaryColor: "#b49d27", secondaryColor: "#91284c", invertedPrimaryColor: "#100815", invertedSecondaryColor: "#241f2b"},
+		Light: ColorProfile{primaryColor: "#6580b0", secondaryColor: "#674d96", invertedPrimaryColor: "#9e8cbd", invertedSecondaryColor: "#524966"},
+	},
+	{
+		Name:  "Matrix",
+		Dark:  ColorProfile{primaryColor: "#00ff00", secondaryColor: "#008800", invertedPrimaryColor: "#000000", invertedSecondaryColor: "#003300"},
+		Light: ColorProfile{primaryColor: "#00aa00", secondaryColor: "#005500", invertedPrimaryColor: "#ffffff", invertedSecondaryColor: "#e0e0e0"},
+	},
+	{
+		Name:  "Ghostty Default Style Dark",
+		Dark:  ColorProfile{primaryColor: "#ffffff", secondaryColor: "#bfbfbf", invertedPrimaryColor: "#000000", invertedSecondaryColor: "#374151"},
+		Light: ColorProfile{primaryColor: "#000000", secondaryColor: "#666666", invertedPrimaryColor: "#ffffff", invertedSecondaryColor: "#e5e5e5"},
 	},
 }

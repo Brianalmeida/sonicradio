@@ -103,7 +103,7 @@ func newBufferedStreamer(
 	bs := &bufferedStreamer{
 		url:   url,
 		title: make(map[int64]string),
-		ch:    make(chan [2]float64),
+		ch:    make(chan [2]float64, 88200), // Buffered to 2 seconds (at 44.1kHz) to prevent context switching overhead and stuttering
 		done:  make(chan struct{}),
 		data:  buffer,
 	}
@@ -149,7 +149,8 @@ func newBufferedStreamer(
 		log.Info("===  CANCEL 1 (bufferedStreamer closed) ===")
 	}()
 
-	_ = speaker.Init(bs.format.SampleRate, bs.format.SampleRate.N(time.Second/10))
+	// Increase speaker buffer size to 0.5s to prevent audio hardware popping/underruns during network jitter.
+	_ = speaker.Init(bs.format.SampleRate, bs.format.SampleRate.N(time.Second/2))
 
 	// -- Buffer
 	bs.wg.Add(1)

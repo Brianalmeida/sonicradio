@@ -132,7 +132,9 @@ func (s *Style) setTheme(t Theme) {
 	s.SelDescStyle = lipgloss.NewStyle().Background(s.basePrimaryColor).Foreground(s.invertedSecondaryColor)
 	s.SelectedBorderStyle = lipgloss.NewStyle().
 		Border(lipgloss.BlockBorder(), false, false, false, true).
-		BorderForeground(s.basePrimaryColor)
+		BorderForeground(s.basePrimaryColor).
+		Background(s.basePrimaryColor).
+		Foreground(s.invertedPrimaryColor)
 	s.SelectedBorderStyleInactive = lipgloss.NewStyle().Inherit(s.SelectedBorderStyle).BorderForeground(s.baseSecondaryColor)
 
 	// header
