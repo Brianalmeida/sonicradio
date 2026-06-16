@@ -61,7 +61,7 @@ var Themes = []Theme{
 	},
 	{
 		Name:  "Ghostty Default Style Dark",
-		Dark:  ColorProfile{primaryColor: "#0f0f11", secondaryColor: "#2c42c1", invertedPrimaryColor: "#f0f0ee", invertedSecondaryColor: "#374151"},
+		Dark:  ColorProfile{primaryColor: "#2c42c1", secondaryColor: "#303446", invertedPrimaryColor: "#ffffff", invertedSecondaryColor: "#51576D"},
 		Light: ColorProfile{primaryColor: "#000000", secondaryColor: "#666666", invertedPrimaryColor: "#ffffff", invertedSecondaryColor: "#e5e5e5"},
 	},
 }
