@@ -252,19 +252,22 @@ func Load(version string) (cfg *Value, err error) {
 	}
 	f, err := os.Open(filepath.Join(cfgDirPath, cfgFilename))
 	if err != nil {
-		return
-	}
-	b, err := io.ReadAll(f)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(b, &cfg)
-	if err != nil {
-		return
-	}
-	err = f.Close()
-	if err != nil {
-		return
+		if errors.Is(err, fs.ErrNotExist) {
+			err = nil
+		} else {
+			return
+		}
+	} else {
+		defer f.Close()
+		var b []byte
+		b, err = io.ReadAll(f)
+		if err != nil {
+			return
+		}
+		err = json.Unmarshal(b, &cfg)
+		if err != nil {
+			return
+		}
 	}
 
 	if cfg.Volume == nil {
