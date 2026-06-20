@@ -57,13 +57,13 @@ A TUI radio player making use of [Radio Browser API](https://www.radio-browser.i
 After the installation, the command to run the application:
 
 ```
-    sonicradio #sonicradio_external
+sonicradio #sonicradio_external
 ```
 
 Available options:
 
 ```
-      -debug: creates a log file "sonicradio-[epoch millis].log" in OS specific temp dir
+-debug: creates a log file "sonicradio-[epoch millis].log" in OS specific temp dir
 ```
 
 
